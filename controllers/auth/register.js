@@ -1,9 +1,9 @@
 
 const bcrypt = require('bcryptjs');
 const {User, schema} = require('../../models/user');
-const {createError} = require('../../helpers');
+const {createError, sendEmail} = require('../../helpers');
 const gravatar = require('gravatar');
-
+const nanoid = require('nanoid');
 
 
 const register = async(req, res)=>{
@@ -18,7 +18,14 @@ const register = async(req, res)=>{
     }
 const hashPassword = await bcrypt.hash(password, 10);
 const avatarURL = gravatar.url(email);
-    const result = await User.create({...req.body, password: hashPassword, avatarURL: avatarURL});
+const verificationToken = nanoid(); 
+    const result = await User.create({...req.body, password: hashPassword, avatarURL: avatarURL, verificationToken});
+    const mail ={
+        to:email,
+        subject:'підтвердіть зеєстрацію',
+        html:`<a target='_blank' href='http://localhost:3000/api/auth/verify/${verificationToken}'>нажміть на зеєстрацію</a>`
+    }
+    await sendEmail(mail);
     res.status(201).json({
 name:result.name,
 email:result.email,
